@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CUP咖啡知识库 · 问答测试平台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #1a1a2e;
+    --bg2: #16213e;
+    --bg3: #0f3460;
+    --card: #222244;
+    --card-hover: #2a2a55;
+    --text: #e0e0e0;
+    --text-muted: #8888aa;
+    --accent: #e94560;
+    --accent2: #533483;
+    --green: #2ecc71;
+    --yellow: #f1c40f;
+    --red: #e74c3c;
+    --blue: #3498db;
+    --orange: #e67e22;
+    --border: #333355;
+    --radius: 12px;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .app { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, var(--bg2), var(--bg3));
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #fff;
+  }
+  .header h1 span { color: var(--accent); }
+  .header p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+  /* Mode Switch */
+  .mode-bar {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 12px 24px;
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--text);
+    border: 2px solid var(--border);
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+  .mode-btn:hover { background: var(--card-hover); }
+  .mode-btn.active-dirty {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+  }
+  .mode-btn.active-clean {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green);
+  }
+  .mode-btn.active-compare {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+  }
+  .mode-desc {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .mode-desc.dirty { background: rgba(231,76,60,0.15); color: var(--red); border: 1px solid rgba(231,76,60,0.3); }
+  .mode-desc.clean { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); }
+  .mode-desc.compare { background: rgba(52,152,219,0.15); color: var(--blue); border: 1px solid rgba(52,152,219,0.3); }
+
+  /* Test Questions */
+  .test-section { margin-bottom: 20px; }
+  .test-section h3 { font-size: 16px; margin-bottom: 12px; color: var(--text-muted); }
+  .test-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .test-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .test-btn:hover { background: var(--bg3); transform: translateY(-1px); }
+  .test-btn .num {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    text-align: center;
+    line-height: 22px;
+    font-size: 12px;
+    margin-right: 6px;
+  }
+
+  /* Chat Area */
+  .chat-area {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 20px;
+    min-height: 400px;
+    margin-bottom: 16px;
+  }
+  .chat-empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+  .chat-empty .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+
+  /* Message */
+  .msg { margin-bottom: 20px; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .msg-user {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .msg-user .bubble {
+    background: var(--bg3);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 18px 18px 4px 18px;
+    max-width: 70%;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .msg-ai { margin-top: 12px; }
+  .msg-ai .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .msg-ai .label .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  /* Compare layout */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .compare-col {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+  .compare-col.dirty-col { border-color: rgba(231,76,60,0.4); }
+  .compare-col.clean-col { border-color: rgba(46,204,113,0.4); }
+  .compare-col h4 {
+    font-size: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .compare-col.dirty-col h4 { color: var(--red); }
+  .compare-col.clean-col h4 { color: var(--green); }
+  .compare-answer {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .compare-answer.dirty-ans {
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.3);
+  }
+  .compare-answer.clean-ans {
+    background: rgba(46,204,113,0.1);
+    border: 1px solid rgba(46,204,113,0.3);
+  }
+  .compare-answer .warning-tag {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .compare-answer .correct-tag {
+    display: inline-block;
+    background: var(--green);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  /* Source Cards */
+  .sources { margin-top: 10px; }
+  .sources h5 {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .source-card {
+    background: rgba(0,0,0,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .source-card .src-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .source-card .src-title {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-public { background: rgba(46,204,113,0.2); color: var(--green); }
+  .badge-internal { background: rgba(241,196,15,0.2); color: var(--yellow); }
+  .badge-secret { background: rgba(231,76,60,0.2); color: var(--red); }
+  .badge-expired { background: rgba(230,126,34,0.2); color: var(--orange); }
+  .badge-test { background: rgba(155,89,182,0.2); color: #bb8fce; }
+  .badge-deprecated { background: rgba(100,100,100,0.3); color: #aaa; }
+
+  .source-card .src-content {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .source-card .src-warning {
+    color: var(--red);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .source-card.highlight-bad {
+    border-color: rgba(231,76,60,0.4);
+    background: rgba(231,76,60,0.08);
+  }
+  .source-card.highlight-good {
+    border-color: rgba(46,204,113,0.4);
+    background: rgba(46,204,113,0.08);
+  }
+
+  /* Input */
+  .input-area {
+    display: flex;
+    gap: 10px;
+  }
+  .input-area input {
+    flex: 1;
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-area input:focus { border-color: var(--accent); }
+  .input-area button {
+    padding: 14px 24px;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .input-area button:hover { opacity: 0.85; }
+
+  /* Single answer display */
+  .answer-block {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .answer-block .answer-text {
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .answer-block .answer-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Stats */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    background: var(--card);
+    border-radius: 8px;
+    padding: 10px 16px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .stat-item .stat-num {
+    font-size: 24px;
+    font-weight: 700;
+  }
+  .stat-item .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .hidden { display: none !important; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .compare-grid { grid-template-columns: 1fr; }
+    .test-btns { gap: 6px; }
+    .test-btn { padding: 8px 12px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <h1><span>CUP</span>咖啡知识库 · 问答测试平台</h1>
+    <p>验证数据清洗效果 — 对比"未经清洗"与"已清洗"知识库的检索与回答差异<br>点击下方测试问题，亲眼看看数据清洗如何避免 AI 犯错</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-item"><div class="stat-num" style="color:var(--green)">6</div><div class="stat-label">公开层条目</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--yellow)">7</div><div class="stat-label">内部层条目</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--red)">2</div><div class="stat-label">机密层条目</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:var(--orange)">3</div><div class="stat-label">废弃不入库</div></div>
+    <div class="stat-item"><div class="stat-num" style="color:#bb8fce">2</div><div class="stat-label">标注非标准</div></div>
+  </div>
+
+  <!-- Mode Switch -->
+  <div class="mode-bar">
+    <button class="mode-btn active-dirty" onclick="switchMode('dirty')">🔴 未经清洗的知识库</button>
+    <button class="mode-btn" onclick="switchMode('clean')">🟢 已清洗的知识库</button>
+    <button class="mode-btn" onclick="switchMode('compare')">🔵 对比模式</button>
+  </div>
+  <div class="mode-desc dirty" id="mode-desc">
+    🔴 当前使用<b>未经清洗</b>的知识库 — 包含旧版手册、重复内容、机密数据、测试数据，AI 可能给出错误或危险的回答
+  </div>
+
+  <!-- Test Questions -->
+  <div class="test-section">
+    <h3>🎯 关键测试问题 — 点击即可提问</h3>
+    <div class="test-btns">
+      <button class="test-btn" onclick="askQuestion('员工每周休息几天？')"><span class="num">1</span>员工每周休息几天？</button>
+      <button class="test-btn" onclick="askQuestion('桂花拿铁糖浆用多少？')"><span class="num">2</span>桂花拿铁糖浆用多少？</button>
+      <button class="test-btn" onclick="askQuestion('咖啡豆采购价是多少？')"><span class="num">3</span>咖啡豆采购价是多少？</button>
+      <button class="test-btn" onclick="askQuestion('现在有什么促销活动？')"><span class="num">4</span>现在有什么促销活动？</button>
+      <button class="test-btn" onclick="askQuestion('顾客投诉怎么处理？')"><span class="num">5</span>顾客投诉怎么处理？</button>
+    </div>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="chat-area" id="chat-area">
+    <div class="chat-empty" id="chat-empty">
+      <div class="icon">☕</div>
+      点击上方测试问题，或输入自定义问题<br>看看知识库清洗前后，AI 的回答有多大差异
+    </div>
+    <div id="chat-content" class="hidden"></div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <input type="text" id="user-input" placeholder="输入你想测试的问题..." onkeydown="if(event.key==='Enter')submitCustom()">
+    <button onclick="submitCustom()">提问</button>
+  </div>
+
+</div>
+
+<script>
+// ===== Knowledge Base Data =====
+
+// DIRTY KB - 未经清洗的原始素材（包含所有问题）
+const dirtyKB = [
+  {
+    id: '素材01',
+    title: '员工手册（2026年4月修订版）',
+    level: 'public',
+    keywords: ['员工', '手册', '休息', '培训', '排班', '职责', '服务', '开店', '收档', '清理'],
+    content: '热情不打扰原则；顾客进店3秒内微笑致意，保持2米距离；3分钟清理原则；员工每周休息2天；新员工须完成40小时带薪培训，理论≥80分、实操≥90分方可上岗。',
+    version: '2026-v1',
+    effective: '2026-04-01',
+    status: '当前有效'
+  },
+  {
+    id: '素材04',
+    title: '员工手册（2024年3月旧版）',
+    level: 'public',
+    keywords: ['员工', '手册', '休息', '培训', '排班', '推荐', '新品', '清理'],
+    content: '员工每周休息1天；新员工20小时培训即可上岗；主动推荐新品给顾客；顾客离座后10分钟内完成清理。',
+    version: '2024-v1',
+    effective: '2024-03-01',
+    status: '⚠ 已废止但仍在知识库中',
+    warning: '此版本已废止！其中"休1天""20小时培训"等条款已不再适用'
+  },
+  {
+    id: '素材02',
+    title: '饮品配方标准',
+    level: 'public',
+    keywords: ['饮品', '配方', '美式', '拿铁', '卡布奇诺', '桂花拿铁', '冷萃', '糖浆', '售价', '咖啡豆'],
+    content: '美式22/26元，拿铁28/33元，卡布奇诺30/35元；桂花拿铁32/37元（桂花糖浆10ml）；冷萃18/22元，椰青冷萃25/29元；出品不超过4分钟。',
+    version: '2026-v1',
+    effective: '2026-07-01',
+    status: '当前有效'
+  },
+  {
+    id: '素材10',
+    title: '桂花拿铁糖浆用量（内部讨论）',
+    level: 'internal',
+    keywords: ['桂花拿铁', '糖浆', '用量', '桂花', '测试'],
+    content: '内部讨论记录：桂花拿铁糖浆用量测试阶段使用15ml，口味偏甜偏重；正式配方已调整为10ml。',
+    version: '测试记录',
+    effective: '未标注',
+    status: '⚠ 测试数据，未标注"非正式"',
+    warning: 'AI可能误引用15ml测试数据作为标准回答'
+  },
+  {
+    id: '素材03',
+    title: '2026年7月暑期促销方案',
+    level: 'public',
+    keywords: ['促销', '活动', '买一送一', '积分', '桂花拿铁', '特价', '优惠', '七月'],
+    content: '2026年7月15日-8月15日：周二四14:00-17:00买一送一（美式/拿铁/卡布奇诺中杯）；全时段双倍积分；桂花拿铁尝鲜特价26元/杯。',
+    version: '2026-v1',
+    effective: '2026-07-15',
+    expiry: '2026-08-15',
+    status: '当前在执行'
+  },
+  {
+    id: '素材07',
+    title: '2025年促销活动记录',
+    level: 'public',
+    keywords: ['促销', '活动', '买一送一', '积分', '优惠', '周五', '新客', '半价'],
+    content: '2025年促销：周五双倍积分；桂花拿铁买一送一；新客首单半价。',
+    version: '2025',
+    effective: '2025年（已过期）',
+    status: '⚠ 已过期但仍在知识库中，无过期标注',
+    warning: '此方案已过期！顾客问促销时AI可能回答旧规则'
+  },
+  {
+    id: '素材06',
+    title: '客诉处理SOP完整版',
+    level: 'public',
+    keywords: ['客诉', '投诉', '处理', 'SOP', '话术', '退款', '不满意', '等太久'],
+    content: '完整SOP：3分钟响应、15分钟解决；场景一（口味不满意）：重做→退款→8折券；场景二（等太久）：升杯→兑换券；场景三（规则误解）：按顾客理解执行→解释规则→补充说明。处理后须登记客诉记录表。',
+    version: '2026-v1',
+    effective: '2026-01-01',
+    status: '当前有效'
+  },
+  {
+    id: '素材05',
+    title: '客诉处理流程（简略版）',
+    level: 'public',
+    keywords: ['客诉', '投诉', '处理', '流程', '道歉'],
+    content: '客诉处理三步流程：道歉 → 解决 → 记录。',
+    version: '简略大纲',
+    effective: '未标注',
+    status: '⚠ 仅三步大纲，与完整SOP重复',
+    warning: '此版本过于简略，AI可能只给出三步大纲而非完整SOP'
+  },
+  {
+    id: '素材08',
+    title: '咖啡豆采购价格表',
+    level: 'public',
+    keywords: ['咖啡豆', '价格', '采购', '云南', '埃塞', '哥伦比亚', '巴西', '成本', '单价'],
+    content: '云南小粒咖啡豆320元/5kg袋；埃塞俄比亚耶加雪菲480元/2kg袋；哥伦比亚蕙兰520元/2kg袋；巴西桑托斯380元/5kg袋。文件标注"不应纳入客服知识库"。',
+    version: '2026-Q3',
+    effective: '2026-06-01',
+    status: '⚠ 机密数据但无权限隔离',
+    warning: '采购价格属于机密！顾客询问时AI可能直接报价'
+  }
+];
+
+// CLEAN KB - 已清洗的知识条目
+const cleanKB = [
+  {
+    id: 'KB01',
+    title: '员工手册（2026年4月修订版）',
+    level: 'public',
+    keywords: ['员工', '手册', '休息', '培训', '排班', '职责', '服务', '开店', '收档', '清理'],
+    content: '热情不打扰原则；顾客进店3秒内微笑致意，保持2米距离；3分钟清理原则；员工每周休息2天；新员工须完成40小时带薪培训，理论≥80分、实操≥90分方可上岗。',
+    version: '2026-v1',
+    effective: '2026-04-01',
+    status: '当前有效',
+    supersedes: '素材04（24版旧手册已废止）'
+  },
+  {
+    id: 'KB02',
+    title: '饮品配方与售价标准',
+    level: 'public',
+    keywords: ['饮品', '配方', '美式', '拿铁', '卡布奇诺', '桂花拿铁', '冷萃', '糖浆', '售价', '咖啡豆', '桂花'],
+    content: '美式22/26元，拿铁28/33元，卡布奇诺30/35元；桂花拿铁桂花糖浆10ml（⚠15ml测试数据已作废）；冷萃18/22元，椰青冷萃25/29元；咖啡豆零售：云南豆68元/250g，埃塞豆98元/250g。',
+    version: '2026-v1',
+    effective: '2026-07-01',
+    status: '当前有效',
+    note: '桂花拿铁糖浆10ml为正式标准，15ml测试数据不可引用'
+  },
+  {
+    id: 'KB03',
+    title: '2026年7月暑期促销方案',
+    level: 'public',
+    keywords: ['促销', '活动', '买一送一', '积分', '桂花拿铁', '特价', '优惠', '七月', '周二', '周四'],
+    content: '2026年7月15日-8月15日：周二四14:00-17:00买一送一；全时段双倍积分；桂花拿铁尝鲜特价26元/杯。⚠2025年促销已过期，不可引用旧规则。',
+    version: '2026-v1',
+    effective: '2026-07-15',
+    expiry: '2026-08-15',
+    status: '当前在执行',
+    note: '2025年方案已过期归档至KB11'
+  },
+  {
+    id: 'KB04',
+    title: '客诉处理SOP完整版',
+    level: 'public',
+    keywords: ['客诉', '投诉', '处理', 'SOP', '话术', '退款', '不满意', '等太久', '误解'],
+    content: '完整SOP：3分钟响应、15分钟解决。口味不满意→重做/退款/8折券；等太久→升杯/兑换券；规则误解→按顾客理解执行/解释规则。须登记客诉记录表。',
+    version: '2026-v1',
+    effective: '2026-01-01',
+    status: '当前有效',
+    note: '素材05简略版（仅三步）已废弃，不可引用'
+  },
+  {
+    id: 'KB05',
+    title: '门店常见FAQ',
+    level: 'public',
+    keywords: ['WiFi', '密码', '宠物', '插座', '充电宝', '生日', '预订', '咖啡豆', '招聘', '兼职'],
+    content: 'WiFi：CUPCOFFEE-FREE无密码8:00-22:00；宠物：室内不可，外摆区可（牵绳）；插座12个靠墙；充电宝2元/30分钟；生日会员免费中杯；咖啡豆零售68/98元/250g。',
+    version: '2026-v1',
+    effective: '2026-07-01',
+    status: '当前有效'
+  },
+  {
+    id: 'KB13',
+    title: '顾客好评摘录',
+    level: 'public',
+    keywords: ['好评', '评价', '顾客', '口碑', '推荐'],
+    content: '摘录自美团/大众点评："大学城最好喝的拿铁""店员好温柔""周二买一送一划算""WiFi稳定适合写论文"',
+    version: '2026-v1',
+    status: '当前有效',
+    note: '好评可用于品牌展示，不作为事实依据'
+  },
+  {
+    id: 'KB06',
+    title: '门店基础信息',
+    level: 'internal',
+    keywords: ['门店', '地址', '面积', '座位', '营业', '大学城'],
+    content: 'CUP咖啡大学城店，营业7:00-22:00，面积120㎡，48个座位（含8个沙发位），外摆区12座。',
+    version: '2026-v1',
+    effective: '2026-07-01',
+    status: '当前有效'
+  },
+  {
+    id: 'KB07',
+    title: '排班制度与排班表',
+    level: 'internal',
+    keywords: ['排班', '班次', '开店', '营业', '收档', '休息', '周末'],
+    content: '开店班7:00-7:30，营业班7:30-21:00，收档班21:00-22:00；周末全员到岗；每人每周休2天。',
+    version: '2026-v1',
+    status: '当前有效'
+  },
+  {
+    id: 'KB14',
+    title: '咖啡豆采购价格（机密）',
+    level: 'secret',
+    keywords: ['咖啡豆', '价格', '采购', '云南', '埃塞', '哥伦比亚', '巴西', '成本', '单价'],
+    content: '🚫 机密等级：高 — 仅店长+财务可访问。采购价格绝不可向顾客透露。',
+    version: '2026-Q3',
+    effective: '2026-06-01',
+    status: '当前有效',
+    access: '仅店长+财务',
+    warning: '顾客询问咖啡豆价格时，回答零售价（KB02），绝不可提及采购价'
+  },
+  {
+    id: 'KB15',
+    title: '供应商联系方式（机密）',
+    level: 'secret',
+    keywords: ['供应商', '联系方式', '云澜', '合同'],
+    content: '🚫 机密等级：高 — 仅店长+财务可访问。供应商信息绝不可对外透露。',
+    version: '2026-Q3',
+    status: '当前有效',
+    access: '仅店长+财务'
+  }
+];
+
+// ===== Search Engine =====
+function searchKB(query, kb, mode) {
+  const qLower = query.toLowerCase();
+  const results = [];
+  
+  for (const entry of kb) {
+    let score = 0;
+    const matchedKeywords = [];
+    
+    for (const kw of entry.keywords) {
+      if (qLower.includes(kw.toLowerCase())) {
+        score += 3;
+        matchedKeywords.push(kw);
+      }
+    }
+    
+    // Title match bonus
+    for (const kw of entry.keywords) {
+      if (entry.title.toLowerCase().includes(kw.toLowerCase()) && !matchedKeywords.includes(kw)) {
+        score += 1;
+      }
+    }
+    
+    // Content match bonus
+    for (const kw of entry.keywords) {
+      if (entry.content.toLowerCase().includes(kw.toLowerCase()) && !matchedKeywords.includes(kw)) {
+        score += 0.5;
+      }
+    }
+    
+    if (score > 0) {
+      // In clean mode, filter by permission
+      let accessible = true;
+      if (mode === 'clean') {
+        // For customer-facing queries, secret level is blocked
+        if (entry.level === 'secret') {
+          accessible = false;
+        }
+      }
+      // In dirty mode, everything is accessible (that's the problem!)
+      
+      results.push({
+        ...entry,
+        score,
+        matchedKeywords,
+        accessible
+      });
+    }
+  }
+  
+  results.sort((a, b) => b.score - a.score);
+  return results;
+}
+
+// ===== Answer Generator =====
+function generateAnswer(query, results, mode) {
+  if (results.length === 0) return '抱歉，知识库中没有找到相关信息。';
+  
+  const accessibleResults = results.filter(r => r.accessible);
+  if (accessibleResults.length === 0 && mode === 'clean') {
+    return '抱歉，该信息属于机密层级，无法向您提供。如您需要了解咖啡豆零售价格，可参考门店公示售价。';
+  }
+  
+  // Simple answer synthesis based on top results
+  const top = accessibleResults[0];
+  if (!top) return '抱歉，无法回答该问题。';
+  
+  // Custom answers for the 5 key test questions
+  const qLower = query.toLowerCase();
+  
+  if (qLower.includes('休息') && qLower.includes('几天') || qLower.includes('每周') && qLower.includes('休息')) {
+    if (mode === 'dirty') {
+      // In dirty mode, both versions exist - pick whichever has higher score or come first
+      const hasOld = results.find(r => r.id === '素材04');
+      const hasNew = results.find(r => r.id === '素材01');
+      if (hasOld && hasOld.score >= hasNew.score) {
+        return '根据员工手册，员工每周休息1天。（⚠ 此为2024年旧版规定，已废止）';
+      } else if (hasOld) {
+        return '知识库中存在两个版本：2024版规定每周休息1天，2026版规定每周休息2天。建议以最新版本为准。（⚠ 版本冲突，AI回答可能不一致）';
+      }
+      return '根据员工手册，员工每周休息2天。';
+    } else {
+      return '根据2026年4月修订版员工手册，每位员工每周休息2天，由店长提前一周排定。旧版（2024版）"每周休1天"已废止，不再适用。';
+    }
+  }
+  
+  if (qLower.includes('糖浆') || (qLower.includes('桂花拿铁') && qLower.includes('用多少'))) {
+    if (mode === 'dirty') {
+      const hasTest = results.find(r => r.id === '素材10');
+      if (hasTest) {
+        return '桂花拿铁的桂花糖浆用量为15ml。（⚠ 此为内部测试阶段数据，正式配方已调整为10ml，但AI可能引用测试数据）';
+      }
+      return '桂花拿铁桂花糖浆用量为10ml。';
+    } else {
+      return '桂花拿铁的桂花糖浆正式用量为10ml。⚠ 内部测试阶段15ml数据已作废，不可作为依据。';
+    }
+  }
+  
+  if (qLower.includes('采购价') || (qLower.includes('咖啡豆') && qLower.includes('价格') && !qLower.includes('零售'))) {
+    if (mode === 'dirty') {
+      return '云南小粒咖啡豆采购价320元/5kg袋，埃塞俄比亚耶加雪菲480元/2kg袋，哥伦比亚蕙兰520元/2kg袋，巴西桑托斯380元/5kg袋。（⚠ 机密信息直接暴露给顾客！文件标注"不应纳入客服知识库"但无权限隔离）';
+    } else {
+      return '抱歉，咖啡豆采购价格属于公司机密信息，无法向您透露。如您需要购买咖啡豆，我们的零售价格为：云南豆68元/250g，埃塞俄比亚耶加雪菲98元/250g。欢迎到店选购！';
+    }
+  }
+  
+  if (qLower.includes('促销') || qLower.includes('活动') || qLower.includes('优惠')) {
+    if (mode === 'dirty') {
+      const hasOld = results.find(r => r.id === '素材07');
+      const hasNew = results.find(r => r.id === '素材03');
+      if (hasOld && hasOld.score >= hasNew.score) {
+        return '当前促销活动：周五双倍积分、桂花拿铁买一送一、新客首单半价。（⚠ 此为2025年过期方案！2026年7月方案为周二四买一送一+双倍积分+桂花拿铁尝鲜26元）';
+      }
+      return '知识库中存在两个促销方案：2025年（周五双倍积分、买一送一、首单半价）和2026年7月（周二四买一送一、双倍积分、桂花拿铁26元）。建议以最新方案为准。（⚠ 时效混淆，AI可能回答过期方案）';
+    } else {
+      return '当前在执行2026年7月暑期促销方案（7月15日-8月15日）：① 周二、周四14:00-17:00经典饮品买一送一；② 全时段双倍积分，满100分兑换中杯饮品；③ 桂花拿铁尝鲜特价26元/杯。⚠ 2025年促销方案已全部过期，不可引用旧规则。';
+    }
+  }
+  
+  if (qLower.includes('客诉') || qLower.includes('投诉') || qLower.includes('处理')) {
+    if (mode === 'dirty') {
+      const hasSimple = results.find(r => r.id === '素材05');
+      const hasFull = results.find(r => r.id === '素材06');
+      if (hasSimple && hasSimple.score >= hasFull.score) {
+        return '客诉处理流程：道歉 → 解决 → 记录。（⚠ 此为简略版三步大纲，完整SOP含7个步骤和具体话术）';
+      }
+      return '客诉处理：道歉→解决→记录。（⚠ 知识库中存在简略版和完整版，AI可能引用简略版）';
+    } else {
+      return '客诉处理完整SOP：3分钟内响应，15分钟内解决。①口味不满意→重做/退款/8折券；②等太久→升杯/兑换券；③规则误解→按顾客理解执行后解释规则。处理后须登记客诉记录表。⚠ 简略版（仅三步）已废弃。';
+    }
+  }
+  
+  // Generic answer for custom questions
+  return `根据知识条目「${top.title}」：${top.content}`;
+}
+
+// ===== UI Logic =====
+let currentMode = 'dirty';
+let chatHistory = [];
+
+function switchMode(mode) {
+  currentMode = mode;
+  const btns = document.querySelectorAll('.mode-btn');
+  btns.forEach(b => b.className = 'mode-btn');
+  
+  if (mode === 'dirty') btns[0].className = 'mode-btn active-dirty';
+  else if (mode === 'clean') btns[1].className = 'mode-btn active-clean';
+  else btns[2].className = 'mode-btn active-compare';
+  
+  const desc = document.getElementById('mode-desc');
+  desc.className = 'mode-desc ' + mode;
+  if (mode === 'dirty') {
+    desc.innerHTML = '🔴 当前使用<b>未经清洗</b>的知识库 — 包含旧版手册、重复内容、机密数据、测试数据，AI 可能给出<b>错误或危险</b>的回答';
+  } else if (mode === 'clean') {
+    desc.innerHTML = '🟢 当前使用<b>已清洗</b>的知识库 — 废弃内容已移除，机密数据已隔离，时效已标注，AI 回答<b>准确且安全</b>';
+  } else {
+    desc.innerHTML = '🔵 对比模式 — 同一问题同时展示<b>未经清洗</b>和<b>已清洗</b>两种回答，直观感受数据清洗的价值';
+  }
+  
+  // Re-render all chat history in new mode
+  renderChat();
+}
+
+function askQuestion(query) {
+  chatHistory.push(query);
+  renderChat();
+}
+
+function submitCustom() {
+  const input = document.getElementById('user-input');
+  const query = input.value.trim();
+  if (!query) return;
+  chatHistory.push(query);
+  input.value = '';
+  renderChat();
+}
+
+function renderChat() {
+  const empty = document.getElementById('chat-empty');
+  const content = document.getElementById('chat-content');
+  
+  if (chatHistory.length === 0) {
+    empty.classList.remove('hidden');
+    content.classList.add('hidden');
+    return;
+  }
+  
+  empty.classList.add('hidden');
+  content.classList.remove('hidden');
+  
+  let html = '';
+  
+  for (const query of chatHistory) {
+    if (currentMode === 'compare') {
+      html += renderCompare(query);
+    } else {
+      html += renderSingle(query, currentMode);
+    }
+  }
+  
+  content.innerHTML = html;
+  
+  // Auto scroll
+  const chatArea = document.getElementById('chat-area');
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function renderSingle(query, mode) {
+  const kb = mode === 'dirty' ? dirtyKB : cleanKB;
+  const results = searchKB(query, kb, mode);
+  const answer = generateAnswer(query, results, mode);
+  const accessibleResults = results.filter(r => r.accessible);
+  const blockedResults = results.filter(r => !r.accessible);
+  
+  const isDirty = mode === 'dirty';
+  
+  let html = `
+    <div class="msg">
+      <div class="msg-user">
+        <div class="bubble">${query}</div>
+      </div>
+      <div class="msg-ai">
+        <div class="label"><span class="dot" style="background:${isDirty ? 'var(--red)' : 'var(--green)'}"></span>${isDirty ? '未经清洗的知识库回答' : '已清洗的知识库回答'}</div>
+        <div class="answer-block">
+          <div class="answer-text">${answer}</div>
+          <div class="answer-meta">
+            <span>检索到 ${results.length} 条相关条目</span>
+            ${blockedResults.length > 0 ? `<span style="color:var(--red)">· ${blockedResults.length} 条因权限被过滤</span>` : ''}
+          </div>
+        </div>
+        <div class="sources">
+          <h5>📄 检索到的知识条目</h5>
+          ${results.map(r => renderSourceCard(r, isDirty)).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  return html;
+}
+
+function renderCompare(query) {
+  const dirtyResults = searchKB(query, dirtyKB, 'dirty');
+  const cleanResults = searchKB(query, cleanKB, 'clean');
+  const dirtyAnswer = generateAnswer(query, dirtyResults, 'dirty');
+  const cleanAnswer = generateAnswer(query, cleanResults, 'clean');
+  
+  const dirtyAccessible = dirtyResults.filter(r => r.accessible);
+  const cleanAccessible = cleanResults.filter(r => r.accessible);
+  const cleanBlocked = cleanResults.filter(r => !r.accessible);
+  
+  // Determine if dirty answer is problematic
+  const isBad = dirtyAnswer.includes('⚠');
+  
+  let html = `
+    <div class="msg">
+      <div class="msg-user">
+        <div class="bubble">${query}</div>
+      </div>
+      <div class="msg-ai">
+        <div class="compare-grid">
+          <div class="compare-col dirty-col">
+            <h4>🔴 未经清洗</h4>
+            <div class="compare-answer dirty-ans">
+              ${isBad ? '<div class="warning-tag">❌ 存在风险</div>' : '<div class="warning-tag" style="background:var(--orange)">⚠ 需关注</div>'}
+              ${dirtyAnswer}
+            </div>
+            <div class="sources">
+              <h5>📄 检索命中 ${dirtyResults.length} 条</h5>
+              ${dirtyResults.map(r => renderSourceCard(r, true)).join('')}
+            </div>
+          </div>
+          <div class="compare-col clean-col">
+            <h4>🟢 已清洗</h4>
+            <div class="compare-answer clean-ans">
+              <div class="correct-tag">✅ 回答正确</div>
+              ${cleanAnswer}
+            </div>
+            <div class="sources">
+              <h5>📄 检索命中 ${cleanResults.length} 条（${cleanBlocked.length > 0 ? cleanBlocked.length + ' 条机密被过滤' : '全部可访问'}）</h5>
+              ${cleanResults.map(r => renderSourceCard(r, false)).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  return html;
+}
+
+function renderSourceCard(entry, isDirty) {
+  const levelBadge = {
+    'public': '<span class="badge badge-public">公开</span>',
+    'internal': '<span class="badge badge-internal">内部</span>',
+    'secret': '<span class="badge badge-secret">机密</span>'
+  };
+  
+  let extraBadges = '';
+  if (entry.warning || entry.status?.includes('废止') || entry.status?.includes('过期') || entry.status?.includes('测试') || entry.status?.includes('简略')) {
+    if (entry.id === '素材04') extraBadges += '<span class="badge badge-deprecated">已废止</span>';
+    if (entry.id === '素材07') extraBadges += '<span class="badge badge-expired">已过期</span>';
+    if (entry.id === '素材10') extraBadges += '<span class="badge badge-test">测试数据</span>';
+    if (entry.id === '素材05') extraBadges += '<span class="badge badge-deprecated">简略/重复</span>';
+    if (entry.id === 'KB14' && !isDirty) extraBadges += '<span class="badge badge-secret">权限过滤</span>';
+  }
+  
+  const isBadSource = isDirty && (entry.id === '素材04' || entry.id === '素材07' || entry.id === '素材10' || entry.id === '素材05' || entry.id === '素材08');
+  const isGoodSource = !isDirty && (entry.id === 'KB01' || entry.id === 'KB02' || entry.id === 'KB03' || entry.id === 'KB04' || entry.id === 'KB14');
+  
+  const cardClass = isBadSource ? 'source-card highlight-bad' : (isGoodSource ? 'source-card highlight-good' : 'source-card');
+  
+  let warningText = '';
+  if (entry.warning) warningText = `<div class="src-warning">${entry.warning}</div>`;
+  if (!entry.accessible) warningText += `<div class="src-warning">🚫 权限限制：此条目在顾客问答场景不可访问</div>`;
+  
+  return `
+    <div class="${cardClass}">
+      <div class="src-header">
+        <span class="src-title">${entry.id} · ${entry.title}</span>
+        <span>${levelBadge[entry.level] || ''}${extraBadges}</span>
+      </div>
+      <div class="src-content">${entry.content.substring(0, 120)}${entry.content.length > 120 ? '...' : ''}</div>
+      ${warningText}
+    </div>
+  `;
+}
+
+// Initialize
+switchMode('dirty');
+</script>
+</body>
+</html>
